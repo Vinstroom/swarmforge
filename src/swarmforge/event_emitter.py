@@ -1,6 +1,7 @@
 from typing import Callable, Dict, List, Optional, Type
 from queue import Queue
 from collections import defaultdict
+from time import perf_counter
 
 from .task_queue import TaskQueue
 
@@ -8,11 +9,14 @@ class EventType:
     TASK_ADDED = "task_added"
     TASK_REMOVED = "task_removed"
     TASK_PROGRESS = "task_progress"
+    THROUGHPUT_UPDATED = "throughput_updated"
 
 class EventEmitter:
     def __init__(self, task_queue: TaskQueue):
         self._task_queue = task_queue
         self._listeners: Dict[str, List[Callable]] = defaultdict(list)
+        self._last_tick = perf_counter()
+        self._tasks_since_last_tick = 0
 
     def on(self, event_type: str, listener: Callable) -> None:
         """
@@ -36,6 +40,7 @@ class EventEmitter:
 
     def _on_task_added(self, task) -> None:
         self.emit(EventType.TASK_ADDED, task)
+        self._tasks_since_last_tick += 1
 
     def _on_task_removed(self, task) -> None:
         self.emit(EventType.TASK_REMOVED, task)
@@ -43,20 +48,20 @@ class EventEmitter:
     def _on_task_progress(self, task, progress) -> None:
         self.emit(EventType.TASK_PROGRESS, task, progress)
 
+    def _update_throughput(self) -> None:
+        if perf_counter() - self._last_tick > 1:
+            throughput = self._tasks_since_last_tick / (perf_counter() - self._last_tick)
+            self.emit(EventType.THROUGHPUT_UPDATED, throughput)
+            self._tasks_since_last_tick = 0
+            self._last_tick = perf_counter()
+
+    def _setup_listeners(self) -> None:
+        self.on(EventType.TASK_ADDED, self._on_task_added)
+        self.on(EventType.TASK_REMOVED, self._on_task_removed)
+        self.on(EventType.TASK_PROGRESS, self._on_task_progress)
+        self.on(EventType.THROUGHPUT_UPDATED, self._update_throughput)
+
 def _setup_event_emitter(task_queue: TaskQueue) -> EventEmitter:
     event_emitter = EventEmitter(task_queue)
-
-    def _wrap_task_add(task: TaskQueue.Item) -> None:
-        event_emitter._on_task_added(task)
-
-    def _wrap_task_remove(task: TaskQueue.Item) -> None:
-        event_emitter._on_task_removed(task)
-
-    def _wrap_task_progress(task: TaskQueue.Item, progress: float) -> None:
-        event_emitter._on_task_progress(task, progress)
-
-    task_queue.register_on_task_add(_wrap_task_add)
-    task_queue.register_on_task_remove(_wrap_task_remove)
-    task_queue.register_on_task_progress(_wrap_task_progress)
-
+    event_emitter._setup_listeners()
     return event_emitter
