@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Deque
+from typing import Deque, Optional
 import uuid
 from datetime import datetime
 
@@ -16,16 +16,24 @@ class TaskQueue:
 
     def add_task(self, priority: int, expire: datetime):
         task_id = uuid.uuid4()
-        task = Task(task_id=task_id, priority=priority, expire=expire)
-        self.tasks.append(task)
-        self._reorder_queue()
+        new_task = Task(task_id=task_id, priority=priority, expire=expire)
+        self.tasks.append(new_task)
+        self._reorder_queue(new_task)
 
-    def pop_next_task(self) -> Task:
+    def pop_next_task(self) -> Optional[Task]:
         if not self.tasks:
-            raise IndexError("Pop from empty TaskQueue")
+            return None
 
         task = self.tasks.popleft()
         return task
 
-    def _reorder_queue(self):
-        self.tasks = deque(sorted(self.tasks, key=lambda x: x.priority))
+    def _reorder_queue(self, new_task: Optional[Task] = None):
+        if new_task is not None:
+            self.tasks = deque(self.tasks)
+            insert_index = next((index for index, task in enumerate(self.tasks) if task.priority >= new_task.priority), None)
+            if insert_index is not None:
+                self.tasks.insert(insert_index, new_task)
+            else:
+                self.tasks.append(new_task)
+        else:
+            self.tasks = deque(sorted(self.tasks, key=lambda x: x.priority))
