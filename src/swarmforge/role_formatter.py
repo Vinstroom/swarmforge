@@ -16,16 +16,13 @@ class RoleFormatter:
         assigned_at: float,
     ) -> str:
         """Return a one-line summary of a single role assignment."""
-        ts = datetime.datetime.fromtimestamp(
-            assigned_at, tz=datetime.timezone.utc
-        ).isoformat()
-        return f"[{ts}] Agent '{agent_id}' assigned role '{role}'"
+        return f"[{datetime.datetime.fromtimestamp(assigned_at, tz=datetime.timezone.utc):%Y-%m-%dT%H:%M:%SZ}] Agent '{agent_id}' assigned role '{role}'"
 
     @staticmethod
     def format_table(
         agent_ids: Sequence[str],
         roles: Sequence[str],
-        timestamps: Sequence[float],
+        assigned_times: Sequence[float],
         title: str = "Role Assignment Snapshot",
     ) -> str:
         """Return a table of role assignments with aligned columns."""
@@ -33,14 +30,11 @@ class RoleFormatter:
             return f"{title} (empty)"
 
         lines: list[str] = [title, "=" * len(title)]
-        header = f"{'Agent ID':<24} {'Role':<20} {'Assigned At (UTC)':<30}"
+        header = f"{'Agent ID':<24} {'Role':<20} {'Assigned At (UTC)'}"
         lines.append(header)
         lines.append("-" * len(header))
-        for agent_id, role, ts in zip(agent_ids, roles, timestamps):
-            ts_str = datetime.datetime.fromtimestamp(
-                ts, tz=datetime.timezone.utc
-            ).isoformat()
-            lines.append(f"{agent_id:<24} {role:<20} {ts_str:<30}")
+        for agent_id, role, assigned_time in zip(agent_ids, roles, assigned_times):
+            lines.append(f"{agent_id:<24} {role:<20} {datetime.datetime.fromtimestamp(assigned_time, tz=datetime.timezone.utc)}")
         return "\n".join(lines)
 
     @staticmethod
