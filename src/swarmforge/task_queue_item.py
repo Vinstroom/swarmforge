@@ -4,18 +4,35 @@ from typing import Optional, Dict, Any
 class TaskQueueItem:
     """Represents an item in the task queue."""
 
-    def __init__(self, task_id: str, payload: Dict[str, Any], timestamp: Optional[float] = None):
+    def __init__(
+        self,
+        task_id: str,
+        payload: Dict[str, Any],
+        timestamp: Optional[float] = None,
+        role_assignment_time: Optional[float] = None,
+    ):
         """
         Initializes a new TaskQueueItem.
 
         :param task_id: Unique identifier for the task
         :param payload: Data associated with the task
         :param timestamp: Timestamp when the task was received, defaults to current time if not provided
+        :param role_assignment_time: Timestamp when the task's role was assigned, defaults to None
         """
         self.task_id = task_id
         self.payload = payload
         self.timestamp = timestamp or time.time()
+        self.role_assignment_time = role_assignment_time
+
+    def assign_role(self, assignment_time: Optional[float] = None) -> None:
+        """
+        Assigns a role to this task and records the assignment time.
+
+        :param assignment_time: Timestamp for role assignment, defaults to current time if not provided
+        """
+        self.role_assignment_time = assignment_time or time.time()
 
     def __repr__(self) -> str:
         """Returns a string representation of the TaskQueueItem."""
-        return f"TaskQueueItem(task_id={self.task_id}, timestamp={self.timestamp})"
+        role_assignment_text = f", role_assignment_time={self.role_assignment_time}" if self.role_assignment_time else ""
+        return f"TaskQueueItem(task_id={self.task_id}, timestamp={self.timestamp}{role_assignment_text})"
