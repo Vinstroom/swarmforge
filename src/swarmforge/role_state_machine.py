@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 import swarmforge.timestamp as ts
 
@@ -34,8 +35,12 @@ class RoleStateMachine(ABC):
         pass
 
     @abstractmethod
-    def deactivate_role(self) -> None:
-        pass
+    def deactivate_role(self, heartbeat: Optional[ts.Timestamp] = None) -> None:
+        """Validate heartbeat before deactivating role."""
+        if heartbeat is not None and not isinstance(heartbeat, ts.Timestamp):
+            raise ValueError("Invalid heartbeat. Expected swarmforge.timestamp.Timestamp.")
+        if self.state != RoleState.ACTIVE:
+            raise ValueError("Role must be in 'ACTIVE' state to deactivate.")
 
     @abstractmethod
     def status(self) -> str:
@@ -52,7 +57,8 @@ class SimpleRoleStateMachine(RoleStateMachine):
     def activate_role(self) -> None:
         self._state = RoleState.ACTIVE
 
-    def deactivate_role(self) -> None:
+    def deactivate_role(self, heartbeat: Optional[ts.Timestamp] = None) -> None:
+        super().deactivate_role(heartbeat)
         self._state = RoleState.INACTIVE
 
     def status(self) -> str:
