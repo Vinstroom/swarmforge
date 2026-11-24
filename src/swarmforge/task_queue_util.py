@@ -1,10 +1,36 @@
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 
 class TaskQueueNormalizer:
     """
-    A utility class to normalize task queue strings.
+    A utility class to normalize task queue strings and emit events related to message buses.
     """
+    _event_callbacks: Dict[str, List[Any]] = {}
+
+    @staticmethod
+    def on(event: str, callback: Any) -> None:
+        """
+        Register an event callback for the given event.
+
+        Args:
+            event (str): The event to register the callback for.
+            callback (Any): The callback function to register.
+        """
+        TaskQueueNormalizer._event_callbacks.setdefault(event, []).append(callback)
+
+    @staticmethod
+    def emit(event: str, *args: Any, **kwargs: Any) -> None:
+        """
+        Emit the given event with the provided arguments.
+
+        Args:
+            event (str): The event to emit.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+        if event in TaskQueueNormalizer._event_callbacks:
+            for callback in TaskQueueNormalizer._event_callbacks[event]:
+                callback(*args, **kwargs)
 
     @staticmethod
     def normalize(task_queue: str) -> str:
@@ -19,7 +45,9 @@ class TaskQueueNormalizer:
         Returns:
             str: The normalized task queue string.
         """
-        return re.sub(r'\s+', ' ', task_queue.strip().lower())
+        normalized = re.sub(r'\s+', ' ', task_queue.strip().lower())
+        TaskQueueNormalizer.emit('task_queue_normalized', task_queue, normalized)
+        return normalized
 
     @staticmethod
     def normalize_multiple(task_queues: List[str]) -> List[str]:
@@ -57,4 +85,5 @@ class TaskQueueNormalizer:
             if normalized_task_queues.count(normalized_task_queue) > 1:
                 duplicates = [task_queues[i] for i, n_tq in enumerate(normalized_task_queues) if n_tq == normalized_task_queue]
                 duplicate_pairs.extend(list(zip(duplicates, duplicates[1:])))
+                TaskQueueNormalizer.emit('task_queue_duplicates_found', duplicates)
         return duplicate_pairs
