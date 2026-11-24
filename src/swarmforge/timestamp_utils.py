@@ -37,8 +37,8 @@ def heartbeat_score(heartbeats: Dict[str, datetime], current_time: datetime = No
     scores = {}
     for agent, heartbeat in heartbeats.items():
         time_passed = (current_time - heartbeat).total_seconds()
-        # Penalize agents that haven't heartbeat recently
-        scores[agent] = time_passed if time_passed < 10 else 0
+        # Penalize agents that haven't heartbeat recently and those with timestamps older than possible
+        scores[agent] = min(time_passed, 0) if time_passed < 0 else 0
 
     consistency = calc_standard_deviation(heartbeats.values())
     # Penalize inconsistency in heartbeats
@@ -70,3 +70,19 @@ def calc_standard_deviation(data: Union[Iterable[datetime], Iterable[float]]) ->
     standard_deviation = variance ** 0.5
 
     return standard_deviation
+
+def format_timestamp_for_message_buses(timestamp: Union[datetime, float], precision: int = 3) -> str:
+    """
+    Format a timestamp for human-readable output in message buses.
+
+    Args:
+        timestamp (Union[datetime, float]): The timestamp to format.
+        precision (int, optional): The number of decimal places to round the timestamp to. Defaults to 3.
+
+    Returns:
+        str: A string representation of the timestamp suitable for message buses.
+    """
+    if isinstance(timestamp, datetime):
+        timestamp = to_timestamp(timestamp)
+
+    return f"{timestamp:.{precision}f}"
