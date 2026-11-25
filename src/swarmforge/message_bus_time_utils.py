@@ -1,9 +1,10 @@
 """Utilities for handling timestamps and durations in message bus contexts."""
 
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
 
 TimeLike = Union[datetime, float, int]
+RoleStats = Dict[str, int]
 
 def now() -> float:
     """Return current timestamp as float (seconds since epoch)."""
@@ -40,3 +41,18 @@ def subtract_duration(timestamp: TimeLike, seconds: float) -> float:
 def timestamp_in_future(timestamp: TimeLike, threshold_seconds: float) -> bool:
     """Check if timestamp is at least threshold_seconds in future."""
     return duration_seconds(now(), timestamp) >= threshold_seconds
+
+def roles_by_timestamp(roles_log: List[Dict[str, Any]], timestamp: float) -> RoleStats:
+    """Get role assignment statistics at a given timestamp.
+
+    Args:
+        roles_log (List[Dict[str, Any]]): List of role assignments with timestamp and role.
+        timestamp (float): Timestamp for which to retrieve statistics.
+
+    Returns:
+        RoleStats: Dictionary of roles and their counts at the given timestamp.
+    """
+    return {
+        entry["role"]: len(roles_log.filter(lambda x: x["timestamp"] <= timestamp and x["role"] == role))
+        for role, entry in roles_log.items()
+    }
