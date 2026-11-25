@@ -1,36 +1,36 @@
-"""String normalization utilities for message bus topic and key handling."""
-
 from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Final
+from typing import Final, Optional, Dict, Any
 
 _REPLACE_PATTERN: Final[re.Pattern] = re.compile(r"[^\w\-.]")
 _COLLAPSE_PATTERN: Final[re.Pattern] = re.compile(r"[.\-_]{2,}")
 _TRAILING_PATTERN: Final[re.Pattern] = re.compile(r"^[.\-_]|[.\-_]$")
 
+MessageBusConfig = Dict[str, Any]
+DEFAULT_CONFIG: MessageBusConfig = {
+    "max_length": 128,
+    "lowercase": True,
+}
 
-def normalize_key(key: str, max_length: int = 128, lowercase: bool = True) -> str:
+def normalize_key(
+    key: str,
+    config: Optional[MessageBusConfig] = None,
+) -> str:
     """Normalize a message bus key or topic string.
-
-    Steps:
-    1. Strip whitespace.
-    2. Optionally lowercase.
-    3. NFKD-normalize and strip diacritics.
-    4. Replace non-ASCII word chars with '_'.
-    5. Collapse consecutive separators ('.', '-', '_') into one.
-    6. Remove leading/trailing separators.
-    7. Truncate to max_length.
 
     Args:
         key: Raw input string.
-        max_length: Maximum length of the result (default 128).
-        lowercase: If True (default), convert to lowercase.
+        config: Optional configuration dictionary. Defaults to DEFAULT_CONFIG.
 
     Returns:
         A clean, normalized string safe for use as a topic/key.
     """
+    config = config or DEFAULT_CONFIG
+    max_length = config.get("max_length")
+    lowercase = config.get("lowercase")
+
     if not key:
         return ""
 
@@ -49,21 +49,19 @@ def normalize_key(key: str, max_length: int = 128, lowercase: bool = True) -> st
 
     return s[:max_length]
 
-
-def is_valid_key(key: str, max_length: int = 128) -> bool:
+def is_valid_key(key: str, config: Optional[MessageBusConfig] = None) -> bool:
     """Check if a string is a valid normalized key.
-
-    A valid key matches the pattern: word characters, dots, hyphens, and
-    underscores, no leading/trailing separators, no consecutive separators,
-    and within length limits.
 
     Args:
         key: String to validate.
-        max_length: Maximum allowed length (default 128).
+        config: Optional configuration dictionary. Defaults to DEFAULT_CONFIG.
 
     Returns:
         True if the key is valid, False otherwise.
     """
+    config = config or DEFAULT_CONFIG
+    max_length = config.get("max_length")
+
     if not key:
         return False
     if len(key) > max_length:
