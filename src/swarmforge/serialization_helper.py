@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Union
 import json
 from swarmforge.backoff_policies_and_metrics import BackoffPoliciesAndMetrics
 from swarmforge.consensus_metrics import ConsensusMetrics
@@ -13,18 +13,7 @@ class SwarmforgeSerializer:
     def serialize(obj: Union[BackoffPoliciesAndMetrics, ConsensusMetrics, HeartbeatThroughput,
                             RoleAssignmentStats, SwarmStateMachine]) -> str:
         """Serialize a swarmforge object to a JSON string."""
-        if isinstance(obj, BackoffPoliciesAndMetrics):
-            return json.dumps(obj.model_dump())
-        elif isinstance(obj, ConsensusMetrics):
-            return json.dumps(obj.model_dump())
-        elif isinstance(obj, HeartbeatThroughput):
-            return json.dumps(obj.model_dump())
-        elif isinstance(obj, RoleAssignmentStats):
-            return json.dumps(obj.model_dump())
-        elif isinstance(obj, SwarmStateMachine):
-            return json.dumps(obj.model_dump())
-        else:
-            raise TypeError(f"Unsupported object type: {type(obj).__name__}")
+        return json.dumps(obj.model_dump())
 
     @staticmethod
     def deserialize(json_str: str, obj_type: type) -> Union[BackoffPoliciesAndMetrics,
@@ -44,3 +33,13 @@ class SwarmforgeSerializer:
             return SwarmStateMachine(**obj_dict)
         else:
             raise TypeError(f"Unsupported object type: {obj_type.__name__}")
+
+    @staticmethod
+    def serialize_consensus_metrics(consensus_metrics: ConsensusMetrics) -> str:
+        """Serialize ConsensusMetrics object to a JSON string."""
+        return SwarmforgeSerializer.serialize(consensus_metrics)
+
+    @staticmethod
+    def deserialize_consensus_metrics(json_str: str) -> ConsensusMetrics:
+        """Deserialize a JSON string to a ConsensusMetrics object."""
+        return SwarmforgeSerializer.deserialize(json_str, ConsensusMetrics)
