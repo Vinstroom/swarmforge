@@ -1,4 +1,5 @@
 import time
+import pickle
 from typing import Callable, Any
 from swarmforge.backoff_iterators import ExponentialBackoffIterator
 from swarmforge.backoff_error import BackoffExceededError
@@ -28,5 +29,8 @@ def retry_on_exception(
                 time.sleep(attempt)
 
         raise BackoffExceededError(f"Function {func.__name__} exceeded maximum number of retries")
+
+    # Add a helper method to serialize the wrapper function
+    wrapper.serialize = lambda: pickle.dumps(wrapper)
 
     return wrapper
