@@ -4,6 +4,17 @@ from typing import Dict, List, Tuple
 from swarmforge.backoff_error import BackoffError
 from swarmforge.backoff_policies_and_metrics import BackoffPolicy, BackoffMetric
 
+def normalize_policy_string(policy: str) -> str:
+    """Normalize a policy string by removing leading/trailing whitespaces and converting to lowercase.
+
+    Args:
+        policy (str): The policy string.
+
+    Returns:
+        str: The normalized policy string.
+    """
+    return policy.strip().lower()
+
 def calculate_backoff_stats(backoff_errors: List[BackoffError]) -> Dict[BackoffPolicy, Tuple[int, int, float]]:
     """Calculate backoff statistics for each policy.
 
@@ -17,7 +28,7 @@ def calculate_backoff_stats(backoff_errors: List[BackoffError]) -> Dict[BackoffP
     stats = defaultdict(lambda: (0, 0, 0.0))
 
     for error in backoff_errors:
-        policy = error.policy
+        policy = normalize_policy_string(error.policy)
         retry_count = error.retry_count
 
         stats[policy][0] += retry_count  # Total retries
