@@ -14,5 +14,8 @@ class HeartbeatFormatter:
         :param heartbeat_data: The heartbeat data to format.
         :return: A formatted string.
         """
-        timestamp = datetime.fromtimestamp(heartbeat_data["timestamp"]).strftime('%Y-%m-%d %H:%M:%S.%f')
-        return f"Heartbeat received at {timestamp} from {heartbeat_data['source']}: {heartbeat_data['message']}"
+        timestamp = datetime.fromtimestamp(heartbeat_data.get("timestamp", 0)).strftime('%Y-%m-%d %H:%M:%S.%f')
+        source = heartbeat_data.get("source", "Unknown")
+        message = heartbeat_data.get("message", "No message provided")
+
+        return f"Heartbeat received at {timestamp} from {source}: {message}"
